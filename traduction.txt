@@ -1,0 +1,13 @@
+# Question;réponse
+hello;bonjour
+goodbye;au revoir
+cat;chat
+dog;chien
+house;maison
+car;voiture
+book;livre
+computer;ordinateur
+death; la mort
+To bury; Enterrer
+To rule; Règner ou gouverner
+Qui est le vassal du roi ?; Le Grand seigneur
