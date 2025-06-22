@@ -10,4 +10,54 @@ computer;ordinateur
 death; la mort
 To bury; Enterrer
 To rule; Règner ou gouverner
-Qui est le vassal du roi ?; Le Grand seigneur
+Fact; le fait ( factuel )
+System;système
+Service;service
+Area;zone
+Activity;activité
+Room;pièce
+Law;loi
+War;guerre
+Move;mouvement
+Student;étudiant
+Book;livre
+Program;programme
+Business;affaires
+Health;santé
+Education;éducation
+Power;pouvoir
+City;ville
+Community;communauté
+Name;nom
+President;président
+Team;équipe
+Minute;minute
+Level;niveau
+Family;famille
+Side;côté
+Country;pays
+Field;champ
+Local;local
+National;national
+Little;petit
+Big;grand
+New;nouveau
+Old;vieux
+Good;bon
+Bad;mauvais
+Great;super
+Long;long
+Small;petit
+High;haut
+Different;différent
+Important;important
+Public;public
+Every;chaque
+Still;encore
+Just;juste
+Even;même
+Only;seulement
+Back;arrière
+See;voir
+Look;regarder
+Want;vouloir

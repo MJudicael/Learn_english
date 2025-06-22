@@ -30,7 +30,8 @@ courir;run;ran;run
 payer;pay;paid;paid
 s'asseoir;sit;sat;sat
 parler;speak;spoke;spoken
-mentir;lie;lay;lain
+mentir;lie;lied;lied
+s'allonger;lie;lay;lain
 conduire;lead;led;led
 lire;read;read;read
 grandir;grow;grew;grown
