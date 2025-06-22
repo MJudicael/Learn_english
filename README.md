@@ -1,0 +1,1 @@
+- Pysid 6 necessary
