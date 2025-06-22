@@ -97,7 +97,7 @@ class AboutDialog(QDialog):
         layout.addWidget(title)
         
         # Version
-        version = QLabel("Version 2.1")
+        version = QLabel("Version 2.2")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version)
         
@@ -126,8 +126,9 @@ class QuizApp(QMainWindow):
         super().__init__()
         self.verbes = []
         self.traductions = []
+        self.verbes_reussis = set()  # Nouveau : ensemble pour stocker les verbes réussis
         self.setWindowTitle("Révision : Verbes, Maths et Vocabulaire")
-        self.setGeometry(100, 100, 500, 400)
+        self.setGeometry(100, 100, 450, 200)
 
         # Chargement des données
         self.verbes = charger_donnees(FICHIER_VERBES, ";", 4)
@@ -234,34 +235,51 @@ class QuizApp(QMainWindow):
 
         # Déterminer le type de question
         question_types = []
-        if self.verbes:
+        if self.verbes and len(self.verbes_reussis) < len(self.verbes):
             question_types.append('verbe')
         if self.traductions:
             question_types.append('traduction')
-        question_types.append('maths') # Les maths sont toujours disponibles
+        question_types.append('maths')
 
         choice = random.choice(question_types)
 
+        # Définir la couleur et le thème selon le type de question
         if choice == 'verbe':
-            fr, inf, pret, part = random.choice(self.verbes)
-            self.current_question_data = {
-                'question': fr,
-                'answer': f"{inf} / {pret} / {part}"
-            }
+            theme = "Verbe irrégulier"  # Définir theme avant de l'utiliser
+            theme_label = f'<div style="color: white; font-size: 10pt;">{theme}</div>'
+            self.label_question.setStyleSheet("color: #20FEEF;")  # Bleu
+            # Filtrer les verbes non réussis
+            verbes_disponibles = [v for v in self.verbes if v[0] not in self.verbes_reussis]
+            if verbes_disponibles:  # Si des verbes sont encore disponibles
+                fr, inf, pret, part = random.choice(verbes_disponibles)
+                self.current_question_data = {
+                    'question': f"{theme_label}<div style='font-size: 24pt;'>{fr}</div>",
+                    'answer': f"{inf} / {pret} / {part}",
+                    'type': 'verbe',
+                    'fr': fr
+                }
         elif choice == 'traduction':
+            theme = "Traduction"  # Définir theme avant de l'utiliser
+            theme_label = f'<div style="color: white; font-size: 10pt;">{theme}</div>'
+            self.label_question.setStyleSheet("color: #FFFFFF;")  # Blanc
             eng, fr = random.choice(self.traductions)
             self.current_question_data = {
-                'question': eng,
+                'question': f"{theme_label}<div style='font-size: 24pt;'>{eng}</div>",
                 'answer': fr
             }
         elif choice == 'maths':
+            theme = "Mathématique"  # Définir theme avant de l'utiliser
+            theme_label = f'<div style="color: white; font-size: 10pt;">{theme}</div>'
+            self.label_question.setStyleSheet("color: #ffce33;")  # Orange clair
             a, b = random.randint(2, 9), random.randint(2, 9)
             self.current_question_data = {
-                'question': f"{a} x {b} ?",
+                'question': f"{theme_label}<div style='font-size: 24pt;'>{a} x {b} ?</div>",
                 'answer': str(a * b)
             }
         
         self.label_question.setText(self.current_question_data['question'])
+        # Important : activer le support du HTML rich text
+        self.label_question.setTextFormat(Qt.RichText)
 
     def update_score(self, change):
         """Met à jour le score et la barre de progression."""
@@ -277,10 +295,14 @@ class QuizApp(QMainWindow):
         QTimer.singleShot(500, self.next_question)
 
     def correct_answer(self):
-        self.update_score(5)
+        if (self.current_question_data.get('type') == 'verbe' and 
+            'fr' in self.current_question_data):
+            # Ajouter le verbe à l'ensemble des verbes réussis
+            self.verbes_reussis.add(self.current_question_data['fr'])
+        self.update_score(1)
 
     def wrong_answer(self):
-        self.update_score(-5)
+        self.update_score(-1)
 
     def show_current_answer(self):
         self.label_answer.setText(self.current_question_data.get('answer', ''))
@@ -340,5 +362,5 @@ class QuizApp(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = QuizApp()
-    window.show()  # On affiche directement la fenêtre
-    sys.exit(app.exec_())
+    window.show()
+    sys.exit(app.exec())  # Remplacer exec_() par exec()
