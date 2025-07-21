@@ -3,9 +3,9 @@ import random
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QProgressBar, QMessageBox, QMenuBar, QMenu,
-    QDialog, QLineEdit
+    QDialog, QLineEdit, QGridLayout
 )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont
 
 # --- Constantes pour les fichiers de données ---
@@ -121,28 +121,149 @@ class AboutDialog(QDialog):
         self.setLayout(layout)
 
 
-class QuizApp(QMainWindow):
+class MainMenuWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("Quiz de Révision - Menu Principal")
+        self.setFixedSize(250, 250)
+        self.setGeometry(100, 100, 250, 250)
+        
+        self.setup_ui()
+    
+    def setup_ui(self):
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        layout = QVBoxLayout(central_widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(15)
+                
+        # Grid layout pour les boutons
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(10)
+        
+        # Bouton Math
+        self.btn_math = QPushButton("📊\nMath")
+        self.btn_math.setFont(QFont("Helvetica", 10, QFont.Bold))
+        self.btn_math.setFixedSize(100, 60)
+        self.btn_math.setStyleSheet("""
+            QPushButton {
+                background-color: #ffce33;
+                color: black;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #e6b82e;
+            }
+        """)
+        self.btn_math.clicked.connect(lambda: self.start_activity('math'))
+        grid_layout.addWidget(self.btn_math, 0, 0)
+        
+        # Bouton Verbes irréguliers
+        self.btn_verbs = QPushButton("📝\nVerbes\nIrréguliers")
+        self.btn_verbs.setFont(QFont("Helvetica", 10, QFont.Bold))
+        self.btn_verbs.setFixedSize(100, 60)
+        self.btn_verbs.setStyleSheet("""
+            QPushButton {
+                background-color: #20FEEF;
+                color: black;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #1de5d4;
+            }
+        """)
+        self.btn_verbs.clicked.connect(lambda: self.start_activity('verbs'))
+        grid_layout.addWidget(self.btn_verbs, 0, 1)
+        
+        # Bouton Traduction
+        self.btn_translation = QPushButton("🔤\nTraduction")
+        self.btn_translation.setFont(QFont("Helvetica", 10, QFont.Bold))
+        self.btn_translation.setFixedSize(100, 60)
+        self.btn_translation.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                color: black;
+                border: 2px solid #cccccc;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #f0f0f0;
+            }
+        """)
+        self.btn_translation.clicked.connect(lambda: self.start_activity('translation'))
+        grid_layout.addWidget(self.btn_translation, 1, 0)
+        
+        # Bouton Quitter
+        self.btn_quit = QPushButton("❌\nQuitter")
+        self.btn_quit.setFont(QFont("Helvetica", 10, QFont.Bold))
+        self.btn_quit.setFixedSize(100, 60)
+        self.btn_quit.setStyleSheet("""
+            QPushButton {
+                background-color: #ff6b6b;
+                color: white;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #ff5252;
+            }
+        """)
+        self.btn_quit.clicked.connect(self.close)
+        grid_layout.addWidget(self.btn_quit, 1, 1)
+        
+        layout.addLayout(grid_layout)
+    
+    def start_activity(self, activity_type):
+        """Lance l'activité choisie"""
+        self.quiz_window = QuizApp(activity_type)
+        self.quiz_window.show()
+        self.hide()
+        
+        # Connecter le signal de fermeture pour revenir au menu
+        self.quiz_window.finished.connect(self.show_menu)
+    
+    def show_menu(self):
+        """Affiche à nouveau le menu principal"""
+        self.show()
+        if hasattr(self, 'quiz_window'):
+            self.quiz_window.deleteLater()
+
+
+class QuizApp(QMainWindow):
+    finished = Signal()
+    
+    def __init__(self, activity_type='mixed'):
+        super().__init__()
+        self.activity_type = activity_type
         self.verbes = []
         self.traductions = []
         self.verbes_reussis = set()  # Nouveau : ensemble pour stocker les verbes réussis
-        self.setWindowTitle("Révision : Verbes, Maths et Vocabulaire")
+        self.setWindowTitle(f"Révision : {self.get_activity_title()}")
         self.setGeometry(100, 100, 450, 200)
 
-        # Chargement des données
-        self.verbes = charger_donnees(FICHIER_VERBES, ";", 4)
-        if self.verbes is None:
-            self.show_error_and_exit(f"Fichier '{FICHIER_VERBES}' introuvable.")
-            return
+        # Chargement des données selon le type d'activité
+        if activity_type in ['mixed', 'verbs']:
+            self.verbes = charger_donnees(FICHIER_VERBES, ";", 4)
+            if self.verbes is None and activity_type == 'verbs':
+                self.show_error_and_exit(f"Fichier '{FICHIER_VERBES}' introuvable.")
+                return
 
-        self.traductions = charger_donnees(FICHIER_TRADUCTIONS, ";", 2)
-        if self.traductions is None:
-            self.show_error_and_exit(f"Fichier '{FICHIER_TRADUCTIONS}' introuvable.")
-            return
+        if activity_type in ['mixed', 'translation']:
+            self.traductions = charger_donnees(FICHIER_TRADUCTIONS, ";", 2)
+            if self.traductions is None and activity_type == 'translation':
+                self.show_error_and_exit(f"Fichier '{FICHIER_TRADUCTIONS}' introuvable.")
+                return
 
-        if not self.verbes and not self.traductions:
-            self.show_error_and_exit("Aucune donnée trouvée. Vérifiez vos fichiers .txt.")
+        if activity_type == 'verbs' and not self.verbes:
+            self.show_error_and_exit("Aucun verbe trouvé. Vérifiez votre fichier verbes.txt.")
+            return
+        
+        if activity_type == 'translation' and not self.traductions:
+            self.show_error_and_exit("Aucune traduction trouvée. Vérifiez votre fichier traduction.txt.")
             return
 
         self.score = 50
@@ -151,6 +272,21 @@ class QuizApp(QMainWindow):
 
         self.setup_ui()
         self.next_question()
+    
+    def get_activity_title(self):
+        """Retourne le titre de l'activité selon le type"""
+        titles = {
+            'math': 'Mathématiques',
+            'verbs': 'Verbes Irréguliers',
+            'translation': 'Traduction',
+            'mixed': 'Verbes, Maths et Vocabulaire'
+        }
+        return titles.get(self.activity_type, 'Quiz')
+    
+    def closeEvent(self, event):
+        """Émet le signal finished lors de la fermeture"""
+        self.finished.emit()
+        event.accept()
 
     def show_error_and_exit(self, message):
         """Affiche une erreur critique et ferme l'application."""
@@ -163,10 +299,16 @@ class QuizApp(QMainWindow):
         # Ajout de la barre de menu
         menubar = self.menuBar()
         
-        # Menu Edition
-        edit_menu = menubar.addMenu("Edition")
-        add_translation_action = edit_menu.addAction("Ajouter une traduction")
-        add_translation_action.triggered.connect(self.show_add_translation_dialog)
+        # Menu Navigation
+        nav_menu = menubar.addMenu("Navigation")
+        back_to_menu_action = nav_menu.addAction("Retour au menu principal")
+        back_to_menu_action.triggered.connect(self.close)
+        
+        # Menu Edition (seulement si traductions disponibles)
+        if self.activity_type in ['mixed', 'translation'] and self.traductions is not None:
+            edit_menu = menubar.addMenu("Edition")
+            add_translation_action = edit_menu.addAction("Ajouter une traduction")
+            add_translation_action.triggered.connect(self.show_add_translation_dialog)
         
         # Menu Aide
         help_menu = menubar.addMenu("Aide")
@@ -229,28 +371,47 @@ class QuizApp(QMainWindow):
 
 
     def next_question(self):
-        """Choisit et affiche la prochaine question au hasard."""
+        """Choisit et affiche la prochaine question selon le type d'activité."""
         self.waiting_for_next = False
         self.hide_answer()
 
-        # Déterminer le type de question
+        # Déterminer les types de questions disponibles selon l'activité
         question_types = []
-        if self.verbes and len(self.verbes_reussis) < len(self.verbes):
-            question_types.append('verbe')
-        if self.traductions:
-            question_types.append('traduction')
-        question_types.append('maths')
+        
+        if self.activity_type == 'math':
+            question_types = ['maths']
+        elif self.activity_type == 'verbs':
+            if self.verbes and len(self.verbes_reussis) < len(self.verbes):
+                question_types = ['verbe']
+        elif self.activity_type == 'translation':
+            if self.traductions:
+                question_types = ['traduction']
+        else:  # mixed mode
+            if self.verbes and len(self.verbes_reussis) < len(self.verbes):
+                question_types.append('verbe')
+            if self.traductions:
+                question_types.append('traduction')
+            question_types.append('maths')
+        
+        if not question_types:
+            # Tous les verbes sont réussis ou aucune donnée disponible
+            if self.activity_type == 'verbs':
+                QMessageBox.information(self, "Félicitations!", "Vous avez réussi tous les verbes irréguliers!")
+                self.close()
+                return
+            else:
+                question_types = ['maths']  # Fallback sur les maths
 
         choice = random.choice(question_types)
 
         # Définir la couleur et le thème selon le type de question
         if choice == 'verbe':
-            theme = "Verbe irrégulier"  # Définir theme avant de l'utiliser
+            theme = "Verbe irrégulier"
             theme_label = f'<div style="color: white; font-size: 10pt;">{theme}</div>'
             self.label_question.setStyleSheet("color: #20FEEF;")  # Bleu
             # Filtrer les verbes non réussis
             verbes_disponibles = [v for v in self.verbes if v[0] not in self.verbes_reussis]
-            if verbes_disponibles:  # Si des verbes sont encore disponibles
+            if verbes_disponibles:
                 fr, inf, pret, part = random.choice(verbes_disponibles)
                 self.current_question_data = {
                     'question': f"{theme_label}<div style='font-size: 24pt;'>{fr}</div>",
@@ -259,22 +420,24 @@ class QuizApp(QMainWindow):
                     'fr': fr
                 }
         elif choice == 'traduction':
-            theme = "Traduction"  # Définir theme avant de l'utiliser
+            theme = "Traduction"
             theme_label = f'<div style="color: white; font-size: 10pt;">{theme}</div>'
             self.label_question.setStyleSheet("color: #FFFFFF;")  # Blanc
             eng, fr = random.choice(self.traductions)
             self.current_question_data = {
                 'question': f"{theme_label}<div style='font-size: 24pt;'>{eng}</div>",
-                'answer': fr
+                'answer': fr,
+                'type': 'traduction'
             }
         elif choice == 'maths':
-            theme = "Mathématique"  # Définir theme avant de l'utiliser
+            theme = "Mathématique"
             theme_label = f'<div style="color: white; font-size: 10pt;">{theme}</div>'
             self.label_question.setStyleSheet("color: #ffce33;")  # Orange clair
             a, b = random.randint(2, 9), random.randint(2, 9)
             self.current_question_data = {
                 'question': f"{theme_label}<div style='font-size: 24pt;'>{a} x {b} ?</div>",
-                'answer': str(a * b)
+                'answer': str(a * b),
+                'type': 'maths'
             }
         
         self.label_question.setText(self.current_question_data['question'])
@@ -335,6 +498,10 @@ class QuizApp(QMainWindow):
         """)
 
     def show_add_translation_dialog(self):
+        if not hasattr(self, 'traductions') or self.traductions is None:
+            QMessageBox.warning(self, "Attention", "Aucun fichier de traduction disponible!")
+            return
+            
         dialog = AddTranslationDialog(self)
         if dialog.exec_():
             english = dialog.english_input.text().strip()
@@ -346,6 +513,8 @@ class QuizApp(QMainWindow):
                         f.write(f"\n{english};{french}")
                     
                     # Mise à jour de la liste des traductions
+                    if self.traductions is None:
+                        self.traductions = []
                     self.traductions.append([english, french])
                     QMessageBox.information(self, "Succès", "Traduction ajoutée avec succès !")
                 except Exception as e:
@@ -361,6 +530,6 @@ class QuizApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = QuizApp()
-    window.show()
+    main_window = MainMenuWindow()
+    main_window.show()
     sys.exit(app.exec())  # Remplacer exec_() par exec()
